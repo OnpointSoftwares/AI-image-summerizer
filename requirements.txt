@@ -1,0 +1,7 @@
+numpy
+matplotlib
+scikit-learn
+requests
+pillow
+python3-tk
+tensorflow
