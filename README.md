@@ -7,7 +7,7 @@
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/OnpointSoftwares/AI-image-summerizer)](https://github.com/OnpointSoftwares/AI-image-summerizer/pulls)
 
 <p align="center">
-  <img src="screenshots/app-screenshot.png" alt="Application Screenshot" width="600">
+  <img src="screenshots/dartmanchat.png" alt="Application Screenshot" width="600">
 </p>
 
 ## 🚀 Project Overview
