@@ -1,14 +1,52 @@
 # Image Recognition & Gemini Summarizer
 
-## Overview
-This project provides a modern, user-friendly desktop application for image-based summarization using the Gemini API. Users can select an image, enter a description, and instantly receive a concise summary powered by Google's Gemini large language model. No local AI model or TensorFlow installation is required—just a Gemini API key.
+[![GitHub stars](https://img.shields.io/github/stars/OnpointSoftwares/AI-image-summerizer?style=social)](https://github.com/OnpointSoftwares/AI-image-summerizer/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/OnpointSoftwares/AI-image-summerizer?style=social)](https://github.com/OnpointSoftwares/AI-image-summerizer/network/members)
+[![GitHub license](https://img.shields.io/github/license/OnpointSoftwares/AI-image-summerizer)](https://github.com/OnpointSoftwares/AI-image-summerizer/blob/main/LICENSE)
+[![GitHub issues](https://img.shields.io/github/issues/OnpointSoftwares/AI-image-summerizer)](https://github.com/OnpointSoftwares/AI-image-summerizer/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/OnpointSoftwares/AI-image-summerizer)](https://github.com/OnpointSoftwares/AI-image-summerizer/pulls)
 
-## Features
-- **Intuitive Tkinter GUI:** Clean, modern, and easy-to-use interface.
-- **Image Selection:** Quickly choose images from your computer for analysis.
-- **Manual Description Input:** Enter your own description or context for any image.
-- **Gemini API Summarization:** Instantly get a professional summary of your description.
-- **Cross-Platform:** Works on Linux, Windows, and macOS (Python 3 required).
+<p align="center">
+  <img src="screenshots/app-screenshot.png" alt="Application Screenshot" width="600">
+</p>
+
+## 🚀 Project Overview
+
+A cutting-edge desktop application that combines image recognition with Google's Gemini AI to provide intelligent summarization capabilities. This tool simplifies the process of analyzing images and generating meaningful summaries, making it perfect for content creators, researchers, and anyone looking to extract insights from visual data.
+
+## 🎯 Key Features
+
+- 🎨 **Modern GUI Interface:** Clean and intuitive Tkinter-based interface with responsive design
+- 📸 **Image Processing:** Support for multiple image formats (JPG, PNG, BMP)
+- 📝 **Smart Summarization:** Leveraging Google's Gemini AI for accurate and concise summaries
+- 🌐 **Cross-Platform:** Compatible with Linux, Windows, and macOS
+- 🔐 **Secure Integration:** Easy Gemini API key configuration
+- 📚 **Documentation:** Comprehensive setup and usage guides
+
+## 📈 Project Statistics
+
+<p align="center">
+  <img src="https://github-readme-stats.vercel.app/api?username=OnpointSoftwares&show_icons=true&theme=radical" alt="GitHub Stats">
+</p>
+
+<p align="center">
+  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=OnpointSoftwares&layout=compact&theme=radical" alt="Top Languages">
+</p>
+
+## 📋 Project Structure
+
+```
+AI-image-summerizer/
+├── src/
+│   ├── app.py           # Main application code
+│   ├── gemini_api.py    # Gemini API integration
+│   └── views.py         # UI components
+├── data/
+│   └── raw/            # Raw data files
+├── screenshots/         # Application screenshots
+├── requirements.txt     # Project dependencies
+└── README.md           # Project documentation
+```
 
 ## Setup Instructions
 1. **Clone the Repository**
