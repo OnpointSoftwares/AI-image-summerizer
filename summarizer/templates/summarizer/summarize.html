@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gemini Image Summarizer</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f2f2f7; }
+        .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 3px 12px #0001; padding: 32px; }
+        h1 { color: #4a90e2; }
+        .form-group { margin-bottom: 18px; }
+        label { font-weight: 500; }
+        textarea, input[type='file'] { width: 100%; }
+        .btn { background: #4a90e2; color: #fff; padding: 10px 24px; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; }
+        .summary-box { background: #eaf5ff; border-left: 4px solid #4a90e2; padding: 18px; margin-top: 24px; border-radius: 4px; }
+        img { max-width: 100%; margin-top: 18px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Gemini Image Summarizer</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+            {{ form.image.label_tag }}<br>
+            {{ form.image }}
+        </div>
+        <div class="form-group">
+            {{ form.description.label_tag }}<br>
+            {{ form.description }}
+        </div>
+        <button class="btn" type="submit">Summarize with Gemini</button>
+    </form>
+    {% if image_url %}
+        <img src="{{ image_url }}" alt="Uploaded Image">
+    {% endif %}
+    {% if summary %}
+        <div class="summary-box">
+            <strong>Gemini Summary:</strong><br>
+            {{ summary }}
+        </div>
+    {% endif %}
+</div>
+</body>
+</html>

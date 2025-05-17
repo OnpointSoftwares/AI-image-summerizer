@@ -1,0 +1,256 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DartMan AI Chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f7fc;
+            color: #333;
+            font-family: 'Roboto', sans-serif;
+        }
+        .sidebar {
+            background: #24292f;
+            height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+        .sidebar h5 {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .sidebar a {
+            color: #ddd;
+            font-size: 1.1rem;
+            display: block;
+            padding: 10px 0;
+        }
+        .sidebar a:hover {
+            color: #4a90e2;
+        }
+        .chat-window {
+            background: #fff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            margin-left: 20px;
+        }
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .chat-history::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chat-history::-webkit-scrollbar-thumb {
+            background: #4a90e2;
+            border-radius: 10px;
+        }
+        .chat-bubble {
+            padding: 12px 18px;
+            border-radius: 18px;
+            margin-bottom: 14px;
+            max-width: 75%;
+            display: inline-block;
+            word-wrap: break-word;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .user {
+            background: #4a90e2;
+            color: #fff;
+            align-self: flex-end;
+        }
+        .assistant {
+            background: #f1f1f1;
+            color: #333;
+            align-self: flex-start;
+        }
+        .chat-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4a90e2;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .code-block {
+            background: #2e2e2e;
+            color: #f8f8f8;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        .canvas-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .download-link {
+            margin-top: 10px;
+            display: inline-block;
+            background-color: #4a90e2;
+            padding: 10px 15px;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .download-link:hover {
+            background-color: #357ab7;
+        }
+    </style>
+</head>
+<body>
+<div class="d-flex">
+    <!-- Sidebar -->
+    <div class="sidebar col-3">
+        <h5>DartMan Chats</h5>
+        <ul class="list-unstyled mt-4">
+            {% for chat in recent_chats %}
+            <li class="mb-3">
+                <a href="#" class="text-decoration-none">{{ chat.title }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Chat Window -->
+    <div class="chat-window col-9 d-flex flex-column">
+        <div class="chat-history" id="chat-history">
+            {% for msg in chat_history %}
+            <div class="d-flex {% if msg.role == 'user' %}justify-content-end{% else %}justify-content-start{% endif %}">
+                <div class="chat-bubble {{ msg.role }}">
+                    {% if msg.is_code %}
+                    <div class="code-block">{{ msg.content }}</div>
+                    {% else %}
+                    {{ msg.content }}
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="chat-input">
+            <form id="chat-form" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="input-group">
+                    <input type="text" id="message" name="message" class="form-control" placeholder="Type a message..." autocomplete="off">
+                    <button type="submit" class="btn btn-primary">Send</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+    $("#chat-form").on("submit", function(e){
+        e.preventDefault();
+        let msg = $("#message").val();
+        if (msg.trim() === "") return;
+
+        // Append user message
+        $("#chat-history").append(`
+            <div class="d-flex justify-content-end">
+                <div class="chat-bubble user">${msg}</div>
+            </div>
+        `);
+
+        // Add loading spinner for assistant reply
+        let loadingIndicator = `
+            <div class="d-flex justify-content-start">
+                <div class="chat-bubble assistant">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+        `;
+        $("#chat-history").append(loadingIndicator);
+        $("#message").val("");  // Clear input
+
+        // Send message via AJAX
+        $.ajax({
+            url: "{% url 'chatbot-url' %}",
+            method: "POST",
+            data: {
+                'message': msg,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response){
+                $(".loading-spinner").remove();  // Remove the spinner
+                typeText(response.bot_reply);
+                
+                // Check if code is detected and render in a code block
+                if (response.is_code) {
+                    $("#chat-history").append(`
+                        <div class="d-flex justify-content-start">
+                            <div class="chat-bubble assistant">
+                                <div class="code-block">${response.bot_reply}</div>
+                            </div>
+                        </div>
+                    `);
+                }
+
+                // Provide download link if file is generated
+                if (response.download_url) {
+                    showDownloadLink(response.download_url);
+                }
+
+                // If an image is uploaded, display it
+                if (response.image_url) {
+                    $("#chat-history").append(`
+                        <div class="d-flex justify-content-start">
+                            <div class="chat-bubble assistant">
+                                <img src="${response.image_url}" class="img-fluid" alt="Uploaded Image">
+                            </div>
+                        </div>
+                    `);
+                }
+            },
+            error: function(){
+                $(".loading-spinner").remove();  // Remove the spinner on error
+                alert("Something went wrong! Please try again.");
+            }
+        });
+    });
+
+    function typeText(text){
+        let container = $('<div class="d-flex justify-content-start"><div class="chat-bubble assistant"></div></div>');
+        $("#chat-history").append(container);
+        let bubble = container.find(".assistant");
+        let i = 0;
+        let interval = setInterval(function(){
+            if (i < text.length){
+                bubble.append(text.charAt(i));
+                i++;
+                $("#chat-history").scrollTop($("#chat-history")[0].scrollHeight);
+            } else {
+                clearInterval(interval);
+            }
+        }, 30);
+    }
+
+    function showDownloadLink(url) {
+        let downloadLink = `
+            <div class="d-flex justify-content-start">
+                <a href="${url}" class="download-link" download>Download File</a>
+            </div>
+        `;
+        $("#chat-history").append(downloadLink);
+    }
+</script>
+</body>
+</html>
