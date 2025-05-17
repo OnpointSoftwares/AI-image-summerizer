@@ -69,15 +69,45 @@ AI-image-summerizer/
    python3 src/app.py
    ```
 
-## Usage Guide
-1. **Launch the App:** The main window will appear with a clean interface.
-2. **Select an Image:** Click "Select Image" and choose any image file (JPG, PNG, BMP).
-3. **Describe the Image:** Enter a brief description or context in the text box.
-4. **Summarize:** Click "Summarize with Gemini" to get a concise summary.
-5. **View Results:** The summary will appear below the description box.
+## 📚 Usage Guide
 
-## Customization
-- **UI Enhancements:** Modify `src/app.py` to adjust layout, colors, or add features.
-- **API Integration:** Update `src/gemini_api.py` for advanced Gemini API options.
-- **Add Image Analysis:** Integrate local or cloud-based AI models as needed.
+1. **Start the Application:**
+   - Open the main window with a clean, intuitive interface
+   - The chat interface will appear with a text input area
+
+2. **Begin Chatting:**
+   - Type your question or request in the text input area
+   - Press Enter or click the send button to submit your message
+   - DartMan will process your request and provide a response
+
+3. **Features Available:**
+   - Ask questions on any topic
+   - Get explanations and insights
+   - Receive recommendations
+   - Perform calculations and analyses
+   - Get help with tasks and problems
+
+4. **View Responses:**
+   - Responses appear in the chat window
+   - Previous conversations are saved in the chat history
+   - Clear the chat history when needed
+
+## 🛠️ Customization Options
+
+- **UI Customization:**
+  - Modify `src/app.py` to adjust layout, colors, and styling
+  - Customize the chat interface appearance
+  - Add custom UI elements or features
+
+- **API Configuration:**
+  - Update `src/gemini_api.py` for advanced API settings
+  - Configure response parameters and behavior
+  - Add custom API endpoints or integrations
+
+- **Feature Enhancement:**
+  - Add new chat features or capabilities
+  - Integrate additional AI models or services
+  - Customize response formatting and presentation
+
+
 
