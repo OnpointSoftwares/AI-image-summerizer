@@ -1,10 +1,10 @@
-# Image Recognition & Gemini Summarizer
+# DartMan AI Chat
 
-[![GitHub stars](https://img.shields.io/github/stars/OnpointSoftwares/AI-image-summerizer?style=social)](https://github.com/OnpointSoftwares/AI-image-summerizer/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/OnpointSoftwares/AI-image-summerizer?style=social)](https://github.com/OnpointSoftwares/AI-image-summerizer/network/members)
-[![GitHub license](https://img.shields.io/github/license/OnpointSoftwares/AI-image-summerizer)](https://github.com/OnpointSoftwares/AI-image-summerizer/blob/main/LICENSE)
-[![GitHub issues](https://img.shields.io/github/issues/OnpointSoftwares/AI-image-summerizer)](https://github.com/OnpointSoftwares/AI-image-summerizer/issues)
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/OnpointSoftwares/AI-image-summerizer)](https://github.com/OnpointSoftwares/AI-image-summerizer/pulls)
+[![GitHub stars](https://img.shields.io/github/stars/OnpointSoftwares/DartMan-AI-Chat?style=social)](https://github.com/OnpointSoftwares/DartMan-AI-Chat/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/OnpointSoftwares/DartMan-AI-Chat?style=social)](https://github.com/OnpointSoftwares/DartMan-AI-Chat/network/members)
+[![GitHub license](https://img.shields.io/github/license/OnpointSoftwares/DartMan-AI-Chat)](https://github.com/OnpointSoftwares/DartMan-AI-Chat/blob/main/LICENSE)
+[![GitHub issues](https://img.shields.io/github/issues/OnpointSoftwares/DartMan-AI-Chat)](https://github.com/OnpointSoftwares/DartMan-AI-Chat/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/OnpointSoftwares/DartMan-AI-Chat)](https://github.com/OnpointSoftwares/DartMan-AI-Chat/pulls)
 
 <p align="center">
   <img src="screenshots/dartmanchat.png" alt="Application Screenshot" width="600">
@@ -12,16 +12,16 @@
 
 ## 🚀 Project Overview
 
-A cutting-edge desktop application that combines image recognition with Google's Gemini AI to provide intelligent summarization capabilities. This tool simplifies the process of analyzing images and generating meaningful summaries, making it perfect for content creators, researchers, and anyone looking to extract insights from visual data.
+A powerful AI chatbot desktop application built with Google's Gemini AI. DartMan provides intelligent conversation capabilities, answering questions, assisting with tasks, and providing helpful insights across various domains.
 
 ## 🎯 Key Features
 
-- 🎨 **Modern GUI Interface:** Clean and intuitive Tkinter-based interface with responsive design
-- 📸 **Image Processing:** Support for multiple image formats (JPG, PNG, BMP)
-- 📝 **Smart Summarization:** Leveraging Google's Gemini AI for accurate and concise summaries
-- 🌐 **Cross-Platform:** Compatible with Linux, Windows, and macOS
-- 🔐 **Secure Integration:** Easy Gemini API key configuration
-- 📚 **Documentation:** Comprehensive setup and usage guides
+- 💬 **Intelligent Chat:** Natural language processing powered by Gemini AI
+- 🌟 **Multi-purpose:** Handles a wide range of topics and tasks
+- 🚀 **Fast Responses:** Quick and accurate answers
+- 🌐 **Cross-Platform:** Works on Linux, Windows, and macOS
+- 🔐 **Secure:** Private and secure chat sessions
+- 📚 **Easy Setup:** Simple configuration and usage
 
 ## 📈 Project Statistics
 
