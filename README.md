@@ -26,11 +26,11 @@ A powerful AI chatbot desktop application built with Google's Gemini AI. DartMan
 ## 📈 Project Statistics
 
 <p align="center">
-  <img src="https://github-readme-stats.vercel.app/api?username=OnpointSoftwares&show_icons=true&theme=radical" alt="GitHub Stats">
+  <img src="https://github-readme-stats.vercel.app/api?username=OnpointSoftwares&repo=DartMan-AI-Chat&show_icons=true&theme=radical" alt="GitHub Stats">
 </p>
 
 <p align="center">
-  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=OnpointSoftwares&layout=compact&theme=radical" alt="Top Languages">
+  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=OnpointSoftwares&repo=DartMan-AI-Chat&layout=compact&theme=radical" alt="Top Languages">
 </p>
 
 ## 📋 Project Structure
@@ -51,8 +51,8 @@ AI-image-summerizer/
 ## Setup Instructions
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/OnpointSoftwares/AI-image-summerizer.git
-   cd AI-image-summerizer
+   git clone https://github.com/OnpointSoftwares/DartMan-AI-Chat.git
+   cd DartMan-AI-Chat
    ```
 2. **Install Dependencies**
    Ensure you have Python 3.8+ and pip installed. Then run:
