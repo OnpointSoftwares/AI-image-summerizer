@@ -50,7 +50,7 @@ def chatbot_ajax(request):
         
         # Get the bot's reply
         bot_reply = chat_with_gemini(
-            [{'role': 'user', 'content': full_message}] if len(chat_history) == 1 else chat_history
+            [{'role': 'user', 'content': full_message,'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] if len(chat_history) == 1 else chat_history
         )
 
         # Check if the bot's reply contains any code
