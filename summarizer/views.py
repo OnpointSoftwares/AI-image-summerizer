@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from .forms import ChatForm
 from src.gemini_api import chat_with_gemini
 from django.core.files.storage import FileSystemStorage
+import datetime
 import re
 DARTMAN_IDENTITY = (
     "You are DartMan, a helpful assistant. When asked who you are, always reply: 'I am DartMan, a helpful assistant.' "
