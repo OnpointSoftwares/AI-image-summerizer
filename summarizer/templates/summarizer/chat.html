@@ -1408,73 +1408,20 @@
 
         // Initialize settings
         loadSettings();
-    });
 
-    // Load settings from localStorage
-    function loadSettings() {
-        try {
-            const savedSettings = localStorage.getItem('chatSettings');
-            if (savedSettings) {
-                Object.assign(settings, JSON.parse(savedSettings));
-                updateSettingsUI();
-                applySettings();
+        // Load settings from localStorage
+        function loadSettings() {
+            try {
+                const savedSettings = localStorage.getItem('chatSettings');
+                if (savedSettings) {
+                    Object.assign(settings, JSON.parse(savedSettings));
+                    updateSettingsUI();
+                    applySettings();
+                }
+            } catch (e) {
+                console.error('Error loading settings:', e);
             }
-            
-            // Add code block
-            result.push({
-                type: 'code',
-                language: match[1] || 'text',
-                content: match[2]
-            });
-            
-            lastIndex = match.index + match[0].length;
-        
-        
-        // Add any remaining text after the last code block
-        if (lastIndex < text.length) {
-            result.push({
-                type: 'text',
-                content: text.substring(lastIndex)
-            });
         }
-        
-        // Process each fragment
-        let currentIndex = 0;
-        const processFragment = () => {
-            if (currentIndex >= result.length) {
-                // Scroll to bottom after all fragments are processed
-                $("#chat-history").scrollTop($("#chat-history")[0].scrollHeight);
-                return;
-            }
-            
-            const fragment = result[currentIndex];
-            
-            if (fragment.type === 'text') {
-                // Type out text
-                let i = 0;
-                const typeChar = () => {
-                    if (i < fragment.content.length) {
-                        bubble.append(document.createTextNode(fragment.content.charAt(i)));
-                        i++;
-                        setTimeout(typeChar, typingSpeed);
-                        $("#chat-history").scrollTop($("#chat-history")[0].scrollHeight);
-                    } else {
-                        currentIndex++;
-                        processFragment();
-                    }
-                };
-                typeChar();
-            } else if (fragment.type === 'code') {
-                // Add code block immediately
-                const codeContainer = $(`
-                    <div class="code-container">
-                        <div class="code-header">
-                            <span class="code-language">${fragment.language}</span>
-                            <div class="code-actions">
-                                <button class="code-action copy-code" title="Copy code">
-                                    <i class="far fa-copy"></i>
-                                </button>
-                            </div>
 
         // Save settings to localStorage
         function saveSettings() {
@@ -1517,8 +1464,6 @@
                 if (timestamp) {
                     timestamp.style.display = settings.messageTimestamps ? 'block' : 'none';
                 }
-                const sidebarCollapseToggle = document.getElementById('sidebarCollapseToggle');
-                const sidebarToggle = document.getElementById('sidebarToggle');
             });
         }
 
@@ -1535,97 +1480,16 @@
         });
     });
 });
-</script>
-</body>
-</html>
 
-<script>
-    function showDownloadLink(url) {
-        let downloadLink = `
-            <div class="d-flex justify-content-start">
-                <a href="${url}" class="download-link" download>Download File</a>
-            </div>
-        `;
-        $("#chat-history").append(downloadLink);
-    }
+// Initialize settings
+loadSettings();
+sidebarCollapseToggle.addEventListener('click', toggleSidebar);
+sidebarToggle.addEventListener('click', toggleSidebar);
 
-    // Load settings from localStorage
-    function loadSettings() {
-        try {
-            const savedSettings = localStorage.getItem('chatSettings');
-            if (savedSettings) {
-                Object.assign(settings, JSON.parse(savedSettings));
-                updateSettingsUI();
-                applySettings();
-            }
-        } catch (e) {
-            console.error('Error loading settings:', e);
-        }
-    }
-
-    // Save settings to localStorage
-    function saveSettings() {
-        try {
-            localStorage.setItem('chatSettings', JSON.stringify(settings));
-            applySettings();
-        } catch (e) {
-            console.error('Error saving settings:', e);
-        }
-    }
-
-    // Update UI based on settings
-    function updateSettingsUI() {
-        document.getElementById('darkModeSwitch').checked = settings.darkMode;
-        document.getElementById('codeHighlightingSwitch').checked = settings.codeHighlighting;
-        document.getElementById('messageTimestampsSwitch').checked = settings.messageTimestamps;
-        document.getElementById('avatarDisplaySwitch').checked = settings.avatarDisplay;
-        document.getElementById('messageReactionsSwitch').checked = settings.messageReactions;
-        document.getElementById('messagePinningSwitch').checked = settings.messagePinning;
-    }
-
-    // Apply settings to the chat interface
-    function applySettings() {
-        // Dark mode
-        if (settings.darkMode) {
-            document.body.classList.add('dark-mode');
-        } else {
-            document.body.classList.remove('dark-mode');
-        }
-
-        // Update message display
-        const messages = document.querySelectorAll('.chat-message');
-        messages.forEach(message => {
-            const avatar = message.querySelector('.message-avatar');
-            if (avatar) {
-                avatar.style.display = settings.avatarDisplay ? 'flex' : 'none';
-            }
-
-            const timestamp = message.querySelector('.message-time');
-            if (timestamp) {
-                timestamp.style.display = settings.messageTimestamps ? 'block' : 'none';
-            }
-        });
-    }
-
-    // Event listeners for settings
-    document.getElementById('saveSettings').addEventListener('click', () => {
-        settings.darkMode = document.getElementById('darkModeSwitch').checked;
-        settings.codeHighlighting = document.getElementById('codeHighlightingSwitch').checked;
-        settings.messageTimestamps = document.getElementById('messageTimestampsSwitch').checked;
-        settings.avatarDisplay = document.getElementById('avatarDisplaySwitch').checked;
-        settings.messageReactions = document.getElementById('messageReactionsSwitch').checked;
-        settings.messagePinning = document.getElementById('messagePinningSwitch').checked;
-        saveSettings();
-        bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
-    });
-
-    // Initialize settings
-    loadSettings();
-    sidebarCollapseToggle.addEventListener('click', toggleSidebar);
-    sidebarToggle.addEventListener('click', toggleSidebar);
-
-    // Initialize based on screen size
-    if (window.innerWidth <= 768) {
+// Initialize based on screen size
+if (window.innerWidth <= 768) {
+    sidebar.classList.add('collapsed');
+}
         sidebar.classList.add('collapsed');
     }
 </script>
