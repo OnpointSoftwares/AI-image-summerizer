@@ -1363,7 +1363,6 @@
                     // Type out text
                     currentChar = 0;
                     typeNext();
-{{ ... }}
                 } else if (part.type === 'code') {
                     // Add code block
                     const codeContainer = `
@@ -1385,13 +1384,12 @@
                 
                 // Process next part after a delay
                 setTimeout(processNextPart, 1000);
-            }
-        }
+            
+        
         
         // Start processing
         processNextPart();
-    }
-
+    
     // Initialize Monaco Editor and set up form submission
     require(['vs/editor/editor.main'], function() {
         initializeMonacoEditors();
@@ -1479,8 +1477,6 @@
             bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
         });
     });
-});
-
 // Initialize settings
 loadSettings();
 sidebarCollapseToggle.addEventListener('click', toggleSidebar);
@@ -1490,8 +1486,7 @@ sidebarToggle.addEventListener('click', toggleSidebar);
 if (window.innerWidth <= 768) {
     sidebar.classList.add('collapsed');
 }
-        sidebar.classList.add('collapsed');
-    }
+
 </script>
 </body>
 </html>

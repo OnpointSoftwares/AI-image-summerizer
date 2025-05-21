@@ -30,7 +30,6 @@ def chat_with_gemini(chat_history, api_key=None):
     if not key:
         raise ValueError("Gemini API key not set.")
     headers = {"Content-Type": "application/json"}
-    # Convert chat history to Gemini's expected format
     contents = []
     for msg in chat_history:
         contents.append({"role": msg["role"], "parts": [{"text": msg["content"]}]})
