@@ -4,7 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <title>DartMan AI Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.min.css">
     <style>
         body {
             background-color: #f4f7fc;
@@ -20,12 +24,27 @@
         .sidebar h5 {
             font-size: 1.5rem;
             font-weight: bold;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #444;
         }
-        .sidebar a {
+        .chat-item {
             color: #ddd;
-            font-size: 1.1rem;
-            display: block;
-            padding: 10px 0;
+            font-size: 1rem;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chat-item:hover, .chat-item.active {
+            background: #2d3748;
+            color: #fff;
+        }
+        .chat-time {
+            font-size: 0.8rem;
+            color: #9ca3af;
+            margin-top: 3px;
         }
         .sidebar a:hover {
             color: #4a90e2;
@@ -55,11 +74,22 @@
         .chat-bubble {
             padding: 12px 18px;
             border-radius: 18px;
-            margin-bottom: 14px;
+            margin-bottom: 5px;
             max-width: 75%;
             display: inline-block;
             word-wrap: break-word;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        .message-time {
+            font-size: 0.7rem;
+            color: #6b7280;
+            text-align: right;
+            margin-top: 3px;
+            opacity: 0.8;
+        }
+        .user .message-time {
+            color: rgba(255, 255, 255, 0.7);
         }
         .user {
             background: #4a90e2;
@@ -75,6 +105,10 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            width: 100%;
+        }
+        #chat-form {
+            width: 100%;
         }
         .loading-spinner {
             border: 4px solid #f3f3f3;
@@ -88,13 +122,106 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .code-block {
-            background: #2e2e2e;
-            color: #f8f8f8;
+        .code-container {
+            position: relative;
+            width: 100%;
+            margin: 15px 0;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: #1e1e1e;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        }
+        
+        .monaco-editor-wrapper {
+            width: 100%;
+            min-height: 100px;
+            max-height: 500px;
+            overflow: hidden;
+        }
+        .code-header {
+            background: #1e1e1e;
+            color: #9e9e9e;
+            padding: 8px 12px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.85em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .code-header .code-language {
+            font-weight: 600;
+            text-transform: capitalize;
+            color: #d4d4d4;
+        }
+        
+        .code-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .code-action {
+            background: transparent;
+            border: none;
+            color: #9e9e9e;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .code-action:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        
+        .code-action i {
+            font-size: 14px;
+        }
+        .code-language {
+            font-weight: 600;
+        }
+        .code-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .code-action {
+            background: none;
+            border: none;
+            color: #9e9e9e;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+        .code-action:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        .monaco-editor-container {
+            height: 300px;
+            width: 100%;
+            border-bottom-left-radius: 6px;
+            border-bottom-right-radius: 6px;
+        }
+        .code-placeholder {
+            background: #1e1e1e;
+            color: #9e9e9e;
             padding: 15px;
-            border-radius: 10px;
-            font-family: 'Courier New', monospace;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            white-space: pre;
             overflow-x: auto;
+            margin: 0;
+            border-bottom-left-radius: 6px;
+            border-bottom-right-radius: 6px;
         }
         .canvas-container {
             text-align: center;
@@ -118,27 +245,52 @@
 <div class="d-flex">
     <!-- Sidebar -->
     <div class="sidebar col-3">
-        <h5>DartMan Chats</h5>
-        <ul class="list-unstyled mt-4">
-            {% for chat in recent_chats %}
-            <li class="mb-3">
-                <a href="#" class="text-decoration-none">{{ chat.title }}</a>
-            </li>
-            {% endfor %}
-        </ul>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Chats</h5>
+            <button id="new-chat-btn" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-plus-lg"></i> New Chat
+            </button>
+        </div>
+        
+        <div id="chat-list" class="mt-3">
+            <!-- Chat items will be loaded here -->
+            <div class="chat-item active">
+                <div>Current Chat</div>
+                <div class="chat-time" id="current-chat-time">Just now</div>
+            </div>
+        </div>
+        
+        <div class="mt-auto pt-3 border-top border-secondary">
+            <button id="clear-chat-btn" class="btn btn-sm btn-outline-danger w-100">
+                <i class="bi bi-trash"></i> Clear Chat
+            </button>
+        </div>
     </div>
 
     <!-- Chat Window -->
     <div class="chat-window col-9 d-flex flex-column">
         <div class="chat-history" id="chat-history">
             {% for msg in chat_history %}
-            <div class="d-flex {% if msg.role == 'user' %}justify-content-end{% else %}justify-content-start{% endif %}">
+            <div class="d-flex {% if msg.role == 'user' %}justify-content-end{% else %}justify-content-start{% endif %}" style="width: 100%;">
                 <div class="chat-bubble {{ msg.role }}">
                     {% if msg.is_code %}
-                    <div class="code-block">{{ msg.content }}</div>
+                    <div class="code-container">
+                        <div class="code-header">
+                            <span class="code-language">{{ msg.language|default:'text' }}</span>
+                            <div class="code-actions">
+                                <button class="code-action copy-code" title="Copy code">
+                                    <i class="far fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="monaco-editor" data-code="{{ msg.content|escapejs }}" data-language="{{ msg.language|default:'text' }}"></div>
+                    </div>
                     {% else %}
-                    {{ msg.content }}
+                    {{ msg.content|linebreaksbr }}
                     {% endif %}
+                    <div class="message-time">
+                        {{ msg.timestamp|date:'g:i A' }}
+                    </div>
                 </div>
             </div>
             {% endfor %}
@@ -157,7 +309,221 @@
 </div>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
+    var require = { paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.nls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.js"></script>
+<script>
+    // Monaco Editor instances
+    let monacoEditors = [];
+    
+    // Initialize chat
+    $(document).ready(function() {
+        // Initialize Monaco Editor
+        require(['vs/editor/editor.main'], function() {
+            // Load chat history from session
+            loadChatHistory();
+            
+            // Set up event handlers
+            setupEventHandlers();
+            
+            // Scroll to bottom of chat
+            scrollToBottom();
+            
+            // Initialize code copy functionality
+            setupCodeCopyButtons();
+        });
+    });
+    
+    function initializeMonacoEditors() {
+        // Ensure Monaco is loaded
+        if (typeof monaco === 'undefined') {
+            console.warn('Monaco Editor not loaded yet');
+            return;
+        }
+
+        // Destroy existing editors
+        monacoEditors.forEach(editor => {
+            try {
+                if (editor && typeof editor.dispose === 'function') {
+                    editor.dispose();
+                }
+            } catch (e) {
+                console.error('Error disposing editor:', e);
+            }
+        });
+        monacoEditors = [];
+        
+        // Initialize new editors
+        $('.monaco-editor').each(function() {
+            try {
+                const container = this;
+                const code = $(this).data('code') || '';
+                const language = $(this).data('language') || 'text';
+                
+                // Create wrapper for the editor
+                const wrapper = document.createElement('div');
+                wrapper.className = 'monaco-editor-wrapper';
+                wrapper.style.width = '100%';
+                wrapper.style.borderRadius = '0 0 6px 6px';
+                wrapper.style.overflow = 'hidden';
+                
+                // Replace the placeholder with our wrapper
+                this.parentNode.replaceChild(wrapper, this);
+                
+                // Initialize Monaco Editor
+                const editor = monaco.editor.create(wrapper, {
+                    value: code,
+                    language: language,
+                    theme: 'vs-dark',
+                    readOnly: true,
+                    scrollBeyondLastLine: false,
+                    minimap: { enabled: false },
+                    automaticLayout: true,
+                    lineNumbers: 'on',
+                    renderLineHighlight: 'none',
+                    scrollbar: {
+                        vertical: 'hidden',
+                        horizontal: 'auto',
+                        useShadows: false,
+                        verticalScrollbarSize: 6
+                    },
+                    lineNumbersMinChars: 3,
+                    lineDecorationsWidth: 0,
+                    overviewRulerBorder: false,
+                    hideCursorInOverviewRuler: true,
+                    renderLineHighlightOnlyWhenFocus: true,
+                    contextmenu: false,
+                    fontSize: 14,
+                    lineHeight: 20,
+                    padding: { top: 8, bottom: 8 }
+                });
+                
+                // Auto-resize editor to fit content
+                const updateHeight = () => {
+                    try {
+                        const contentHeight = Math.min(500, Math.max(100, editor.getContentHeight()));
+                        wrapper.style.height = `${contentHeight}px`;
+                        editor.layout({
+                            width: wrapper.offsetWidth,
+                            height: contentHeight
+                        });
+                    } catch (e) {
+                        console.error('Error updating editor height:', e);
+                    }
+                };
+                
+                // Initial update
+                updateHeight();
+                
+                // Update on window resize
+                const resizeObserver = new ResizeObserver(updateHeight);
+                resizeObserver.observe(wrapper);
+                
+                // Clean up on editor dispose
+                editor.onDidDispose(() => {
+                    resizeObserver.disconnect();
+                });
+                
+                monacoEditors.push(editor);
+                
+            } catch (e) {
+                console.error('Error initializing Monaco editor:', e);
+            }
+        });
+    }
+    
+    function setupCodeCopyButtons() {
+        // Handle copy button clicks
+        $(document).on('click', '.copy-code', function() {
+            const codeContainer = $(this).closest('.code-container');
+            const editorContainer = codeContainer.find('.monaco-editor, .code-placeholder')[0];
+            const code = codeContainer.find('.monaco-editor').data('code') || 
+                        codeContainer.find('.code-placeholder').text();
+            
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = $(this).html();
+                $(this).html('<i class="fas fa-check"></i>');
+                setTimeout(() => {
+                    $(this).html(originalText);
+                }, 2000);
+            });
+        });
+    }
+    
+    function setupEventHandlers() {
+        // New chat button
+        $('#new-chat-btn').click(function() {
+            if (confirm('Start a new chat? Your current chat will be saved.')) {
+                window.location.href = "{% url 'new-chat' %}";
+            }
+        });
+        
+        // Clear chat button
+        $('#clear-chat-btn').click(function() {
+            if (confirm('Are you sure you want to clear the chat history?')) {
+                clearChat();
+            }
+        });
+    }
+    
+    function loadChatHistory() {
+        // Set the current chat time
+        const now = new Date();
+        const options = { 
+            month: 'short', 
+            day: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        };
+        $('#current-chat-time').text(now.toLocaleTimeString('en-US', options));
+        
+        // Load previous chat history from session
+        fetch("{% url 'get-chat-history' %}")
+            .then(response => response.json())
+            .then(data => {
+                if (data.chat_history && data.chat_history.length > 0) {
+                    // Update the chat history display
+                    updateChatHistoryUI(data.chat_history);
+                }
+            });
+    }
+    
+    function clearChat() {
+        fetch("{% url 'clear-chat' %}", {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                $('#chat-history').empty();
+            }
+        });
+    }
+    
+    function updateChatHistoryUI(messages) {
+        // This function can be used to update the chat history UI
+        // when loading previous messages
+        console.log('Updating chat history UI', messages);
+        
+        // Re-initialize Monaco editors after content is loaded
+        setTimeout(initializeMonacoEditors, 100);
+    }
+    
+    function scrollToBottom() {
+        const chatHistory = document.getElementById('chat-history');
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+    
+    // Handle chat form submission
     $("#chat-form").on("submit", function(e){
         e.preventDefault();
         let msg = $("#message").val();
@@ -191,18 +557,31 @@
             },
             success: function(response){
                 $(".loading-spinner").remove();  // Remove the spinner
-                typeText(response.bot_reply);
+                typeText(response.bot_reply, $("#chat-history"));
                 
                 // Check if code is detected and render in a code block
                 if (response.is_code) {
-                    $("#chat-history").append(`
+                    const codeContainer = `
                         <div class="d-flex justify-content-start">
                             <div class="chat-bubble assistant">
-                                <div class="code-block">${response.bot_reply}</div>
+                                <div class="code-container">
+                                    <div class="code-header">
+                                        <span class="code-language">${response.language || 'text'}</span>
+                                        <div class="code-actions">
+                                            <button class="code-action copy-code" title="Copy code">
+                                                <i class="far fa-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="monaco-editor" data-code="${response.bot_reply.replace(/"/g, '&quot;')}" data-language="${response.language || 'text'}"></div>
+                                </div>
                             </div>
-                        </div>
-                    `);
+                        </div>`;
+                    $("#chat-history").append(codeContainer);
+                    initializeMonacoEditors();
                 }
+
+                $("#chat-history").scrollTop($("#chat-history")[0].scrollHeight);
 
                 // Provide download link if file is generated
                 if (response.download_url) {
@@ -227,20 +606,96 @@
         });
     });
 
-    function typeText(text){
+    function typeText(text, targetElement) {
+        const typingSpeed = 10; // milliseconds per character
         let container = $('<div class="d-flex justify-content-start"><div class="chat-bubble assistant"></div></div>');
-        $("#chat-history").append(container);
+        targetElement.append(container);
         let bubble = container.find(".assistant");
-        let i = 0;
-        let interval = setInterval(function(){
-            if (i < text.length){
-                bubble.append(text.charAt(i));
-                i++;
-                $("#chat-history").scrollTop($("#chat-history")[0].scrollHeight);
-            } else {
-                clearInterval(interval);
+        
+        // Handle code blocks in the text
+        const codeBlockRegex = /```(\w*)\n([\s\S]*?)\n```/g;
+        let match;
+        let lastIndex = 0;
+        let result = [];
+        
+        // Process the text to find code blocks
+        while ((match = codeBlockRegex.exec(text)) !== null) {
+            // Add text before code block
+            if (match.index > lastIndex) {
+                result.push({
+                    type: 'text',
+                    content: text.substring(lastIndex, match.index)
+                });
             }
-        }, 30);
+            
+            // Add code block
+            result.push({
+                type: 'code',
+                language: match[1] || 'text',
+                content: match[2]
+            });
+            
+            lastIndex = match.index + match[0].length;
+        }
+        
+        // Add any remaining text after the last code block
+        if (lastIndex < text.length) {
+            result.push({
+                type: 'text',
+                content: text.substring(lastIndex)
+            });
+        }
+        
+        // Process each fragment
+        let currentIndex = 0;
+        const processFragment = () => {
+            if (currentIndex >= result.length) {
+                // Scroll to bottom after all fragments are processed
+                $("#chat-history").scrollTop($("#chat-history")[0].scrollHeight);
+                return;
+            }
+            
+            const fragment = result[currentIndex];
+            
+            if (fragment.type === 'text') {
+                // Type out text
+                let i = 0;
+                const typeChar = () => {
+                    if (i < fragment.content.length) {
+                        bubble.append(document.createTextNode(fragment.content.charAt(i)));
+                        i++;
+                        setTimeout(typeChar, typingSpeed);
+                        $("#chat-history").scrollTop($("#chat-history")[0].scrollHeight);
+                    } else {
+                        currentIndex++;
+                        processFragment();
+                    }
+                };
+                typeChar();
+            } else if (fragment.type === 'code') {
+                // Add code block immediately
+                const codeContainer = $(`
+                    <div class="code-container">
+                        <div class="code-header">
+                            <span class="code-language">${fragment.language}</span>
+                            <div class="code-actions">
+                                <button class="code-action copy-code" title="Copy code">
+                                    <i class="far fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="monaco-editor" data-code="${fragment.content.replace(/"/g, '&quot;')}" data-language="${fragment.language}"></div>
+                    </div>`);
+                
+                bubble.append(codeContainer);
+                initializeMonacoEditors();
+                currentIndex++;
+                processFragment();
+            }
+        };
+        
+        // Start processing fragments
+        processFragment();
     }
 
     function showDownloadLink(url) {
