@@ -29,7 +29,10 @@ def get_chat_history(request):
         'chat_history': request.session.get('chat_history', []),
         'session_start': request.session.get('session_start')
     })
-
+def code_parser(code):
+    code=code.replace("```","")
+    code=code.replace("``","")
+    return code
 def chatbot_view(request):
     # Initialize session if it doesn't exist
     if 'session_start' not in request.session:
@@ -56,7 +59,7 @@ def chatbot_view(request):
     if request.method == 'POST':
         form = ChatForm(request.POST, request.FILES)
         if form.is_valid():
-            user_message = form.cleaned_data['message']
+            user_message = form.cleaned_data['message']+"return pure code in its node"
             image = form.cleaned_data.get('image')
             chat_history.append({'role': 'user', 'content': user_message})
             bot_reply = chat_with_gemini(
@@ -78,7 +81,6 @@ def chatbot_view(request):
 
 def chatbot_ajax(request):
     if request.method == 'POST':
-        # Ensure session is properly initialized
         if 'chat_history' not in request.session:
             request.session['chat_history'] = []
             
@@ -88,8 +90,7 @@ def chatbot_ajax(request):
         if not user_message:
             return JsonResponse({'error': 'Empty message'}, status=400)
         current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        full_message = f"{DARTMAN_IDENTITY}{user_message}\n{current_time}"
-        chat_id = request.session.get('chat_id', 0)
+        full_message = f"{DARTMAN_IDENTITY}{user_message}\n{current_time}\nreturn pure code in its node"
         
         chat_history.append({'role': 'user', 'content': full_message})
         
@@ -97,22 +98,17 @@ def chatbot_ajax(request):
         bot_reply = chat_with_gemini(
             [{'role': 'user', 'content': full_message}] if len(chat_history) == 1 else chat_history
         )
-        # Detect code blocks and extract language
         is_code = False
         language = None
         
-        # Check for markdown code blocks with language
         md_code_match = re.search(r'```(\w*)\n([\s\S]*?)\n```', bot_reply, re.DOTALL)
         if md_code_match:
             is_code = True
             language = md_code_match.group(1) or 'text'
-            # Remove the markdown code block markers for cleaner display
             bot_reply = re.sub(r'```(\w*)\n([\s\S]*?)\n```', r'\2', bot_reply, flags=re.DOTALL)
-        # Check for HTML code blocks
         elif re.search(r'<code.*?>.*?</code>', bot_reply, re.DOTALL):
             is_code = True
             language = 'html'
-            # Remove HTML code block markers for cleaner display
             bot_reply = re.sub(r'<code.*?>(.*?)</code>', r'\1', bot_reply, flags=re.DOTALL)
         download_url = None
         if "Generated file:" in bot_reply: 
