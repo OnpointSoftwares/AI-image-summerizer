@@ -779,69 +779,7 @@
             </div>
         </div>
     </div>
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Chats</h5>
-            <button id="new-chat-btn" class="btn btn-sm btn-outline-light">
-                <i class="bi bi-plus-lg"></i> New Chat
-            </button>
-        </div>
-        
-        <div id="chat-list" class="mt-3">
-            <!-- Chat items will be loaded here -->
-            <div class="chat-item active">
-                <div>Current Chat</div>
-                <div class="chat-time" id="current-chat-time">Just now</div>
-            </div>
-        </div>
-        
-        <div class="mt-auto pt-3 border-top border-secondary">
-            <button id="clear-chat-btn" class="btn btn-sm btn-outline-danger w-100">
-                <i class="bi bi-trash"></i> Clear Chat
-            </button>
-        </div>
-    </div>
-
-    <!-- Chat Window -->
-    <div class="chat-window col-9 d-flex flex-column">
-        <div class="chat-history" id="chat-history">
-            {% for msg in chat_history %}
-            <div class="d-flex {% if msg.role == 'user' %}justify-content-end{% else %}justify-content-start{% endif %}" style="width: 100%;">
-                <div class="chat-bubble {{ msg.role }}">
-                    {% if msg.is_code %}
-                    <div class="code-container">
-                        <div class="code-header">
-                            <span class="code-language">{{ msg.language|default:'text' }}</span>
-                            <div class="code-actions">
-                                <button class="code-action copy-code" title="Copy code">
-                                    <i class="far fa-copy"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="monaco-editor" data-code="{{ msg.content|escapejs }}" data-language="{{ msg.language|default:'text' }}" ></div>
-                    </div>
-                    {% else %}
-                    {{ msg.content|linebreaksbr }}
-                    {% endif %}
-                    <div class="message-time">
-                        {{ msg.timestamp|date:'g:i A' }}
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <div class="chat-input">
-            <form id="chat-form" method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="input-group">
-                    <input type="text" id="message" name="message" class="form-control" placeholder="Type a message..." autocomplete="off">
-                    <button type="submit" class="btn btn-primary">Send</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
+     
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -849,21 +787,19 @@
     // Monaco Editor configuration
     var require = { paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }};
     
-    // Chat settings
-    const settings = {
-        darkMode: false,
-        codeHighlighting: true,
-        messageTimestamps: true,
-        avatarDisplay: true,
-        messageReactions: false,
-        messagePinning: false
-    };
-
     // Load settings from localStorage
     function loadSettings() {
         try {
             const savedSettings = localStorage.getItem('chatSettings');
             if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                document.getElementById('darkModeSwitch').checked = settings.darkMode;
+                document.getElementById('codeHighlightingSwitch').checked = settings.codeHighlighting;
+                document.getElementById('messageTimestampsSwitch').checked = settings.messageTimestamps;
+                document.getElementById('avatarDisplaySwitch').checked = settings.avatarDisplay;
+                document.getElementById('messageReactionsSwitch').checked = settings.messageReactions;
+                document.getElementById('messagePinningSwitch').checked = settings.messagePinning;
+                applySettings(settings);
                 Object.assign(settings, JSON.parse(savedSettings));
                 updateSettingsUI();
                 applySettings();
@@ -1021,6 +957,24 @@
         // Initialize code copy functionality
         setupCodeCopyButtons();
     });
+
+    // Initialize settings
+    loadSettings();
+
+    // Initialize Monaco Editor instances
+    initializeMonacoEditors();
+
+    // Initialize chat history
+    loadChatHistory();
+
+    // Set up event handlers
+    setupEventHandlers();
+
+    // Scroll to bottom of chat
+    scrollToBottom();
+
+    // Initialize code copy functionality
+    setupCodeCopyButtons();
 
     function initializeMonacoEditors() {
         // Destroy existing editors
@@ -1185,6 +1139,52 @@
                 clearChat();
             }
         });
+        
+        // Download chat button
+        $("#download-chat").click(function() {
+            const messages = [];
+            $(".chat-message").each(function() {
+                const role = $(this).hasClass("user") ? "user" : "assistant";
+                const content = $(this).find(".message-bubble").text();
+                const time = $(this).find(".message-time").text();
+                messages.push({ role, content, time });
+            });
+
+            const blob = new Blob([JSON.stringify(messages, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "chat_history.json";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+        
+        // Message actions
+        $("#chat-history").on("click", "[data-action]", function() {
+            const action = $(this).data("action");
+            const message = $(this).closest(".chat-message");
+            const content = message.find(".message-bubble").text();
+
+            switch(action) {
+                case "copy":
+                    navigator.clipboard.writeText(content).then(() => {
+                        const copyBtn = $(this);
+                        const originalText = copyBtn.html();
+                        copyBtn.html('<i class="bi bi-check"></i>');
+                        setTimeout(() => {
+                            copyBtn.html(originalText);
+                        }, 2000);
+                    }).catch(err => {
+                        alert('Failed to copy to clipboard');
+                    });
+                    break;
+                case "pin":
+                    message.toggleClass("pinned");
+                    break;
+            }
+        });
     }
     
     function loadChatHistory() {
@@ -1221,6 +1221,7 @@
         .then(data => {
             if (data.status === 'success') {
                 $('#chat-history').empty();
+                initializeMonacoEditors(); // Reinitialize Monaco editors after clearing
             }
         });
     }
@@ -1232,80 +1233,69 @@
     }
     
     function scrollToBottom() {
-        const chatHistory = document.getElementById('chatHistory');
-        chatHistory.scrollTop = chatHistory.scrollHeight;
-    }
-    
-    // Handle chat form submission
-    $("#chat-form").on("submit", function(e){
-        e.preventDefault();
-        const msg = $("#message").val().trim();
-        if (!msg) return;
 
-        // Disable form submission while processing
-        const submitBtn = $("#chat-form button[type='submit']");
-        submitBtn.prop('disabled', true);
-        submitBtn.html('<i class="bi bi-hourglass"></i> Sending...');
-
-        // Append user message
-        $("#chat-history").append(`
-            <div class="d-flex justify-content-end">
-                <div class="chat-bubble user">${msg}</div>
+    let loadingIndicator = `
+        <div class="d-flex justify-content-start">
+            <div class="chat-bubble assistant">
+                <div class="loading-spinner"></div>
             </div>
-        `);
+        </div>
+    `;
+    $("#chat-history").append(loadingIndicator);
+    $("#message").val("");  // Clear input
 
-        let loadingIndicator = `
-            <div class="d-flex justify-content-start">
-                <div class="chat-bubble assistant">
-                    <div class="loading-spinner"></div>
+    // Send message to server
+    $.ajax({
+        url: "/chat",
+        type: "POST",
+        data: JSON.stringify({ message: msg }),
+        contentType: "application/json",
+        timeout: 30000, // 30 second timeout
+        success: function(response) {
+            // Add assistant message
+            const assistantMessage = `
+                <div class="chat-message assistant">
+                    <div class="message-avatar">A</div>
+                    <div class="message-content">
+                        <div class="message-bubble">${response.message}</div>
+                        <div class="message-meta">
+                            <span class="message-time">${new Date().toLocaleTimeString()}</span>
+                            <div class="message-actions">
+                                <button data-action="copy"><i class="bi bi-clipboard"></i></button>
+                                <button data-action="pin"><i class="bi bi-pin"></i></button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        `;
-        $("#chat-history").append(loadingIndicator);
-        $("#message").val("");  // Clear input
+            `;
+            $("#chat-history").append(assistantMessage);
 
-        // Send message to server
-        $.ajax({
-            url: "/chat",
-            type: "POST",
-            data: JSON.stringify({ message: msg }),
-            contentType: "application/json",
-            timeout: 30000, // 30 second timeout
-            success: function(response) {
-                // Add assistant message
-                const assistantMessage = `
-                    <div class="chat-message assistant">
-                        <div class="message-avatar">A</div>
-                        <div class="message-content">
-                            <div class="message-bubble">${response.message}</div>
-                            <div class="message-meta">
-                                <span class="message-time">${new Date().toLocaleTimeString()}</span>
-                                <div class="message-actions">
-                                    <button data-action="copy"><i class="bi bi-clipboard"></i></button>
-                                    <button data-action="pin"><i class="bi bi-pin"></i></button>
-            },
-            success: function(response){
-                $(".loading-spinner").remove();  // Remove the spinner
-                typeText(response.bot_reply, $("#chat-history"));
-                
-                // Check if code is detected and render in a code block
-                if (response.is_code) {
-                    const codeContainer = `
-                        <div class="d-flex justify-content-start">
-                            <div class="chat-bubble assistant">
+            // Add code block if present
+            if (response.bot_reply) {
+                const codeContainer = `
+                    <div class="d-flex justify-content-start">
+                        <div class="chat-bubble assistant">
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="code-language">${response.language || 'text'}</span>
+                                    <div class="code-actions">
+                                        <button class="code-action copy-code" title="Copy code">
+                                            <i class="bi bi-clipboard"></i>
+                                        </button>
                                 <div class="code-container">
                                     <div class="code-header">
                                         <span class="code-language">${response.language || 'text'}</span>
                                         <div class="code-actions">
                                             <button class="code-action copy-code" title="Copy code">
-                                                <i class="far fa-copy"></i>
+                                                <i class="bi bi-clipboard"></i>
                                             </button>
                                         </div>
                                     </div>
                                     <div class="monaco-editor" data-code="${response.bot_reply.replace(/"/g, '&quot;')}" data-language="${response.language || 'text'}"></div>
                                 </div>
                             </div>
-                        </div>`;
+                        </div>
+                    `;
                     $("#chat-history").append(codeContainer);
                     initializeMonacoEditors();
                 }
@@ -1327,13 +1317,19 @@
                         </div>
                     `);
                 }
+
+                // Re-enable submit button
+                submitBtn.prop('disabled', false);
+                submitBtn.html('Send');
             },
-            error: function(){
-                $(".loading-spinner").remove();  // Remove the spinner on error
-                alert("Something went wrong! Please try again.");
+            error: function(xhr, status, error) {
+                alert("Error sending message: " + error);
+                // Re-enable submit button
+                submitBtn.prop('disabled', false);
+                submitBtn.html('Send');
             }
         });
-    });
+    }
 
     function typeText(text, targetElement) {
         const typingSpeed = 10; // milliseconds per character
@@ -1351,6 +1347,185 @@
         while ((match = codeBlockRegex.exec(text)) !== null) {
             // Add text before code block
             if (match.index > lastIndex) {
+                const textBefore = text.substring(lastIndex, match.index);
+                result.push({ type: 'text', content: textBefore });
+            }
+            
+            // Add code block
+            const language = match[1];
+            const code = match[2];
+            result.push({ type: 'code', language, code });
+            
+            lastIndex = codeBlockRegex.lastIndex;
+        }
+        
+        // Add remaining text after last code block
+        if (lastIndex < text.length) {
+            const remainingText = text.substring(lastIndex);
+            result.push({ type: 'text', content: remainingText });
+        }
+        
+        // Type out the text and code blocks
+        let currentChar = 0;
+        
+        function typeNext() {
+            if (currentChar < text.length) {
+                bubble.append(text[currentChar]);
+                currentChar++;
+                setTimeout(typeNext, typingSpeed);
+            }
+        }
+        
+        function processNextPart() {
+            if (result.length > 0) {
+                const part = result.shift();
+                
+                if (part.type === 'text') {
+                    // Type out text
+                    currentChar = 0;
+                    typeNext();
+                } else if (part.type === 'code') {
+                    // Add code block
+                    const codeContainer = `
+                        <div class="code-container">
+                            <div class="code-header">
+                                <span class="code-language">${part.language || 'text'}</span>
+                                <div class="code-actions">
+                                    <button class="code-action copy-code" title="Copy code">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="monaco-editor" data-code="${part.code.replace(/"/g, '&quot;')}" data-language="${part.language || 'text'}"></div>
+                        </div>
+                    `;
+                    bubble.append(codeContainer);
+                    initializeMonacoEditors();
+                }
+                
+                // Process next part after a delay
+                setTimeout(processNextPart, 1000);
+            }
+        }
+        
+        // Start processing
+        processNextPart();
+    }
+
+    // Initialize Monaco Editor
+    require(['vs/editor/editor.main'], function() {
+        initializeMonacoEditors();
+        loadChatHistory();
+        setupEventHandlers();
+        scrollToBottom();
+        setupCodeCopyButtons();
+    });
+
+    // Initialize settings
+    loadSettings();
+
+    // Initialize chat history
+    loadChatHistory();
+
+    // Set up event handlers
+    setupEventHandlers();
+
+    // Scroll to bottom of chat
+    scrollToBottom();
+
+    // Initialize code copy functionality
+    setupCodeCopyButtons();
+
+// Initialize settings
+loadSettings();
+
+// Initialize chat history
+loadChatHistory();
+
+// Set up event handlers
+setupEventHandlers();
+
+// Scroll to bottom of chat
+scrollToBottom();
+
+// Initialize code copy functionality
+setupCodeCopyButtons();
+
+// Initialize settings
+loadSettings();
+
+// Initialize chat history
+loadChatHistory();
+
+// Set up event handlers
+setupEventHandlers();
+
+// Scroll to bottom of chat
+scrollToBottom();
+
+// Initialize code copy functionality
+setupCodeCopyButtons();
+
+// Initialize settings
+loadSettings();
+
+// Initialize chat history
+loadChatHistory();
+
+// Set up event handlers
+setupEventHandlers();
+
+// Scroll to bottom of chat
+scrollToBottom();
+
+// Initialize code copy functionality
+setupCodeCopyButtons();
+
+// Initialize settings
+loadSettings();
+
+// Initialize chat history
+loadChatHistory();
+
+// Set up event handlers
+setupEventHandlers();
+
+// Scroll to bottom of chat
+scrollToBottom();
+
+// Initialize code copy functionality
+setupCodeCopyButtons();
+
+// Initialize settings
+loadSettings();
+
+// Initialize chat history
+loadChatHistory();
+
+// Set up event handlers
+setupEventHandlers();
+
+// Scroll to bottom of chat
+scrollToBottom();
+
+// Initialize code copy functionality
+setupCodeCopyButtons();
+
+// Initialize settings
+loadSettings();
+
+// Initialize chat history
+loadChatHistory();
+
+// Set up event handlers
+setupEventHandlers();
+
+// Scroll to bottom of chat
+scrollToBottom();
+
+// Initialize code copy functionality
+setupCodeCopyButtons();
+            if (match.index > lastIndex) {
                 result.push({
                     type: 'text',
                     content: text.substring(lastIndex, match.index)
@@ -1365,7 +1540,7 @@
             });
             
             lastIndex = match.index + match[0].length;
-        }
+        
         
         // Add any remaining text after the last code block
         if (lastIndex < text.length) {
@@ -1436,17 +1611,6 @@
         $("#chat-history").append(downloadLink);
     }
 
-    </script>
-</body>
-</html>
-        darkMode: false,
-        codeHighlighting: true,
-        messageTimestamps: true,
-        avatarDisplay: true,
-        messageReactions: false,
-        messagePinning: false
-    };
-
     // Load settings from localStorage
     function loadSettings() {
         try {
@@ -1489,7 +1653,7 @@
         } else {
             document.body.classList.remove('dark-mode');
         }
-
+    }
         // Update message display
         const messages = document.querySelectorAll('.chat-message');
         messages.forEach(message => {
@@ -1501,21 +1665,12 @@
             const timestamp = message.querySelector('.message-time');
             if (timestamp) {
                 timestamp.style.display = settings.messageTimestamps ? 'block' : 'none';
-        const sidebarCollapseToggle = document.getElementById('sidebarCollapseToggle');
-        const sidebarToggle = document.getElementById('sidebarToggle');
-
-        // Settings functionality
-        const settings = {
-            darkMode: false,
-            codeHighlighting: true,
-            messageTimestamps: true,
-            avatarDisplay: true,
-            messageReactions: false,
-            messagePinning: false
-        };
-
-        // Load settings from localStorage
-        function loadSettings() {
+            }
+            const sidebarCollapseToggle = document.getElementById('sidebarCollapseToggle');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+        });
+    // Load settings from localStorage
+    function loadSettings() {
             try {
                 const savedSettings = localStorage.getItem('chatSettings');
                 if (savedSettings) {
@@ -1583,37 +1738,35 @@
             saveSettings();
             bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
         });
+    }
 
-        // Initialize settings
-        loadSettings();
+    // Event listeners for settings
+    document.getElementById('saveSettings').addEventListener('click', () => {
+        settings.darkMode = document.getElementById('darkModeSwitch').checked;
+        settings.codeHighlighting = document.getElementById('codeHighlightingSwitch').checked;
+        settings.messageTimestamps = document.getElementById('messageTimestampsSwitch').checked;
+        settings.avatarDisplay = document.getElementById('avatarDisplaySwitch').checked;
+        settings.messageReactions = document.getElementById('messageReactionsSwitch').checked;
+        settings.messagePinning = document.getElementById('messagePinningSwitch').checked;
+        saveSettings();
+        bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
+    });
 
-        // Sidebar Toggle
-        const sidebar = document.getElementById('sidebar');
-        const sidebarCollapseToggle = document.getElementById('sidebarCollapseToggle');
-        const sidebarToggle = document.getElementById('sidebarToggle');
+    // Initialize settings
+    loadSettings();
 
-        function toggleSidebar() {
-            sidebar.classList.toggle('collapsed');
-            const isCollapsed = sidebar.classList.contains('collapsed');
-            sidebarCollapseToggle.innerHTML = isCollapsed ? '<i class="bi bi-chevron-right"></i>' : '<i class="bi bi-chevron-left"></i>';
-        }
+    // Sidebar Toggle
+    const sidebar = document.getElementById('sidebar');
+    const sidebarCollapseToggle = document.getElementById('sidebarCollapseToggle');
+    const sidebarToggle = document.getElementById('sidebarToggle');
 
-        sidebarCollapseToggle.addEventListener('click', toggleSidebar);
-        sidebarToggle.addEventListener('click', toggleSidebar);
+    sidebarCollapseToggle.addEventListener('click', toggleSidebar);
+    sidebarToggle.addEventListener('click', toggleSidebar);
 
-        // Add responsive behavior
-        window.addEventListener('resize', () => {
-            if (window.innerWidth <= 768) {
-                sidebar.classList.add('collapsed');
-            } else {
-                sidebar.classList.remove('collapsed');
-            }
-        });
-
-        // Initialize based on screen size
-        if (window.innerWidth <= 768) {
-            sidebar.classList.add('collapsed');
-        }
-    </script>
+    // Initialize based on screen size
+    if (window.innerWidth <= 768) {
+        sidebar.classList.add('collapsed');
+    }
+</script>
 </body>
 </html>
