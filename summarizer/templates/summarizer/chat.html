@@ -710,7 +710,7 @@
             <form id="chat-form" class="chat-form">
                 <div class="input-group">
                     <input type="text" id="message" class="form-control" placeholder="Type your message...">
-                    <button class="btn btn-primary" type="submit">
+                    <button class="btn btn-primary" id="sendBtn" type="submit">
                         <i class="bi bi-send"></i>
                     </button>
                 </div>
@@ -783,154 +783,62 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
 <script>
     // Monaco Editor configuration
-    var require = { paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }};
-    
+    require.config({
+        paths: {
+            vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs'
+        }
+    });
+
     // Load settings from localStorage
     function loadSettings() {
         try {
             const savedSettings = localStorage.getItem('chatSettings');
-            if (savedSettings) {
-                const settings = JSON.parse(savedSettings);
-                document.getElementById('darkModeSwitch').checked = settings.darkMode;
-                document.getElementById('codeHighlightingSwitch').checked = settings.codeHighlighting;
-                document.getElementById('messageTimestampsSwitch').checked = settings.messageTimestamps;
-                document.getElementById('avatarDisplaySwitch').checked = settings.avatarDisplay;
-                document.getElementById('messageReactionsSwitch').checked = settings.messageReactions;
-                document.getElementById('messagePinningSwitch').checked = settings.messagePinning;
-                applySettings(settings);
-                Object.assign(settings, JSON.parse(savedSettings));
-                updateSettingsUI();
-                applySettings();
-            }
+            applySettings();
         } catch (e) {
             console.error('Error loading settings:', e);
         }
     }
-
-    // Save settings to localStorage
-    function saveSettings() {
-        try {
-            localStorage.setItem('chatSettings', JSON.stringify(settings));
-            applySettings();
-        } catch (e) {
-            console.error('Error saving settings:', e);
-        }
-    }
-
-    // Update UI based on settings
-    function updateSettingsUI() {
-        document.getElementById('darkModeSwitch').checked = settings.darkMode;
-        document.getElementById('codeHighlightingSwitch').checked = settings.codeHighlighting;
-        document.getElementById('messageTimestampsSwitch').checked = settings.messageTimestamps;
-        document.getElementById('avatarDisplaySwitch').checked = settings.avatarDisplay;
-        document.getElementById('messageReactionsSwitch').checked = settings.messageReactions;
-        document.getElementById('messagePinningSwitch').checked = settings.messagePinning;
-    }
-
-    // Apply settings to the chat interface
-    function applySettings() {
-        // Dark mode
-        if (settings.darkMode) {
-            document.body.classList.add('dark-mode');
-        } else {
-            document.body.classList.remove('dark-mode');
-        }
-
-        // Update message display
-        const messages = document.querySelectorAll('.chat-message');
-        messages.forEach(message => {
-            const avatar = message.querySelector('.message-avatar');
-            if (avatar) {
-                avatar.style.display = settings.avatarDisplay ? 'flex' : 'none';
-            }
-
-            const timestamp = message.querySelector('.message-time');
-            if (timestamp) {
-                timestamp.style.display = settings.messageTimestamps ? 'block' : 'none';
-            }
-        });
-    }
-
-    // Event listeners for settings
-    document.getElementById('saveSettings').addEventListener('click', () => {
-        settings.darkMode = document.getElementById('darkModeSwitch').checked;
-        settings.codeHighlighting = document.getElementById('codeHighlightingSwitch').checked;
-        settings.messageTimestamps = document.getElementById('messageTimestampsSwitch').checked;
-        settings.avatarDisplay = document.getElementById('avatarDisplaySwitch').checked;
-        settings.messageReactions = document.getElementById('messageReactionsSwitch').checked;
-        settings.messagePinning = document.getElementById('messagePinningSwitch').checked;
-        saveSettings();
-        bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
-    });
-
-    // Initialize settings
-    loadSettings();
-
-    // Sidebar functionality
-    const sidebar = document.getElementById('sidebar');
-    const sidebarCollapseToggle = document.getElementById('sidebarCollapseToggle');
-    const sidebarToggle = document.getElementById('sidebarToggle');
-
-    function toggleSidebar() {
-        if (window.innerWidth <= 768) {
-            sidebar.classList.toggle('collapsed');
-            const isCollapsed = sidebar.classList.contains('collapsed');
-            sidebar.style.transform = isCollapsed ? 'translateX(0)' : 'translateX(-100%)';
-        } else {
-            sidebar.classList.toggle('collapsed');
-            const isCollapsed = sidebar.classList.contains('collapsed');
-            sidebarCollapseToggle.innerHTML = isCollapsed ? '<i class="bi bi-chevron-right"></i>' : '<i class="bi bi-chevron-left"></i>';
-        }
-    }
-
-    sidebarCollapseToggle.addEventListener('click', toggleSidebar);
-    sidebarToggle.addEventListener('click', toggleSidebar);
-
-    // Add responsive behavior
-    window.addEventListener('resize', () => {
-        if (window.innerWidth <= 768) {
-            sidebar.classList.add('collapsed');
-            sidebar.style.transform = 'translateX(0)';
-            document.body.style.overflow = 'hidden';
-        } else {
-            sidebar.classList.remove('collapsed');
-            sidebar.style.transform = '';
-            document.body.style.overflow = '';
-        }
-    });
 
     // Touch support for mobile devices
     let touchStartX = 0;
     let touchStartY = 0;
     let touchEndX = 0;
     let touchEndY = 0;
+    let touchThreshold = 50;
 
     document.addEventListener('touchstart', function(e) {
-        touchStartX = e.changedTouches[0].screenX;
-        touchStartY = e.changedTouches[0].screenY;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
     });
 
     document.addEventListener('touchend', function(e) {
-        touchEndX = e.changedTouches[0].screenX;
-        touchEndY = e.changedTouches[0].screenY;
+        touchEndX = e.changedTouches[0].clientX;
+        touchEndY = e.changedTouches[0].clientY;
+        handleSwipe();
+    });
 
-        const xDiff = touchEndX - touchStartX;
-        const yDiff = touchEndY - touchStartY;
+    function handleSwipe() {
+        const swipeHorizontalDistance = touchEndX - touchStartX;
+        const swipeVerticalDistance = touchEndY - touchStartY;
+        const isHorizontal = Math.abs(swipeHorizontalDistance) > Math.abs(swipeVerticalDistance);
 
-        if (Math.abs(xDiff) > Math.abs(yDiff) && Math.abs(xDiff) > 50) {
-            if (xDiff > 0 && window.innerWidth <= 768) {
+        if (isHorizontal && Math.abs(swipeHorizontalDistance) > touchThreshold) {
+            if (swipeHorizontalDistance > 0) {
                 // Swipe right
-                sidebar.classList.add('collapsed');
-                document.body.style.overflow = 'hidden';
-            } else if (xDiff < 0 && window.innerWidth <= 768) {
+                if (window.innerWidth <= 768 && !sidebar.classList.contains('collapsed')) {
+                    toggleSidebar();
+                }
+            } else {
                 // Swipe left
-                sidebar.classList.remove('collapsed');
-                document.body.style.overflow = '';
+                if (window.innerWidth <= 768 && sidebar.classList.contains('collapsed')) {
+                    toggleSidebar();
+                }
             }
         }
-    });
+    }
 
     // Initialize based on screen size
     if (window.innerWidth <= 768) {
@@ -942,39 +850,12 @@
     
     // Initialize Monaco Editor
     require(['vs/editor/editor.main'], function() {
-        // Initialize Monaco Editor instances
         initializeMonacoEditors();
-
-        // Load chat history from session
         loadChatHistory();
-        
-        // Set up event handlers
         setupEventHandlers();
-        
-        // Scroll to bottom of chat
         scrollToBottom();
-        
-        // Initialize code copy functionality
         setupCodeCopyButtons();
     });
-
-    // Initialize settings
-    loadSettings();
-
-    // Initialize Monaco Editor instances
-    initializeMonacoEditors();
-
-    // Initialize chat history
-    loadChatHistory();
-
-    // Set up event handlers
-    setupEventHandlers();
-
-    // Scroll to bottom of chat
-    scrollToBottom();
-
-    // Initialize code copy functionality
-    setupCodeCopyButtons();
 
     function initializeMonacoEditors() {
         // Destroy existing editors
@@ -1233,55 +1114,85 @@
     }
     
     function scrollToBottom() {
+        // Scroll to bottom of chat
+        const chatHistory = document.getElementById('chat-history');
+        if (chatHistory) {
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+    }
 
-    let loadingIndicator = `
-        <div class="d-flex justify-content-start">
-            <div class="chat-bubble assistant">
-                <div class="loading-spinner"></div>
+    function sendMessage() {
+        const loadingIndicator = `
+            <div class="d-flex justify-content-start">
+                <div class="chat-bubble assistant">
+                    <div class="loading-spinner"></div>
+                </div>
             </div>
-        </div>
-    `;
-    $("#chat-history").append(loadingIndicator);
-    $("#message").val("");  // Clear input
+        `;
+        $("#chat-history").append(loadingIndicator);
+        $("#message").val("");  // Clear input
+        $("#message").focus();
+        const msg = $("#message").val().trim();
+        
+        if (!msg) return;
 
-    // Send message to server
-    $.ajax({
-        url: "/chat",
-        type: "POST",
-        data: JSON.stringify({ message: msg }),
-        contentType: "application/json",
-        timeout: 30000, // 30 second timeout
-        success: function(response) {
-            // Add assistant message
-            const assistantMessage = `
-                <div class="chat-message assistant">
-                    <div class="message-avatar">A</div>
-                    <div class="message-content">
-                        <div class="message-bubble">${response.message}</div>
-                        <div class="message-meta">
-                            <span class="message-time">${new Date().toLocaleTimeString()}</span>
-                            <div class="message-actions">
-                                <button data-action="copy"><i class="bi bi-clipboard"></i></button>
-                                <button data-action="pin"><i class="bi bi-pin"></i></button>
-                            </div>
+        // Add user message
+        const userMessage = `
+            <div class="chat-message user">
+                <div class="message-avatar">U</div>
+                <div class="message-content">
+                    <div class="message-bubble">${msg}</div>
+                    <div class="message-meta">
+                        <span class="message-time">${new Date().toLocaleTimeString()}</span>
+                        <div class="message-actions">
+                            <button data-action="copy"><i class="bi bi-clipboard"></i></button>
+                            <button data-action="pin"><i class="bi bi-pin"></i></button>
                         </div>
                     </div>
                 </div>
-            `;
-            $("#chat-history").append(assistantMessage);
+            </div>
+        `;
+        $("#chat-history").append(userMessage);
 
-            // Add code block if present
-            if (response.bot_reply) {
-                const codeContainer = `
-                    <div class="d-flex justify-content-start">
-                        <div class="chat-bubble assistant">
-                            <div class="code-container">
-                                <div class="code-header">
-                                    <span class="code-language">${response.language || 'text'}</span>
-                                    <div class="code-actions">
-                                        <button class="code-action copy-code" title="Copy code">
-                                            <i class="bi bi-clipboard"></i>
-                                        </button>
+        // Disable submit button
+        const submitBtn = $("#sendBtn");
+        submitBtn.prop('disabled', true);
+        submitBtn.html('<i class="bi bi-hourglass"></i> Sending...');
+
+        // Send message to server
+        $.ajax({
+            url: "/chat",
+            type: "POST",
+            data: JSON.stringify({ message: msg }),
+            contentType: "application/json",
+            timeout: 30000, // 30 second timeout
+            success: function(response) {
+                // Remove loading indicator
+                $(".loading-spinner").parent().parent().remove();
+
+                // Add assistant message
+                const assistantMessage = `
+                    <div class="chat-message assistant">
+                        <div class="message-avatar">A</div>
+                        <div class="message-content">
+                            <div class="message-bubble">${response.message}</div>
+                            <div class="message-meta">
+                                <span class="message-time">${new Date().toLocaleTimeString()}</span>
+                                <div class="message-actions">
+                                    <button data-action="copy"><i class="bi bi-clipboard"></i></button>
+                                    <button data-action="pin"><i class="bi bi-pin"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                $("#chat-history").append(assistantMessage);
+
+                // Add code block if present
+                if (response.bot_reply) {
+                    const codeContainer = `
+                        <div class="d-flex justify-content-start">
+                            <div class="chat-bubble assistant">
                                 <div class="code-container">
                                     <div class="code-header">
                                         <span class="code-language">${response.language || 'text'}</span>
@@ -1320,70 +1231,139 @@
 
                 // Re-enable submit button
                 submitBtn.prop('disabled', false);
-                submitBtn.html('Send');
+                submitBtn.html('<i class="bi bi-send"></i> Send');
             },
             error: function(xhr, status, error) {
-                alert("Error sending message: " + error);
+                // Remove loading indicator
+                $(".loading-spinner").parent().parent().remove();
+
+                console.error("Error sending message:", error, xhr.responseText);
+                const errorMessage = xhr.responseText || error;
+                const errorBubble = `
+                    <div class="chat-message assistant">
+                        <div class="message-avatar">A</div>
+                        <div class="message-content">
+                            <div class="message-bubble error-message">Error: ${errorMessage}</div>
+                            <div class="message-meta">
+                                <span class="message-time">${new Date().toLocaleTimeString()}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                $("#chat-history").append(errorBubble);
+                $("#chat-history").scrollTop($("#chat-history")[0].scrollHeight);
+                
                 // Re-enable submit button
                 submitBtn.prop('disabled', false);
-                submitBtn.html('Send');
+                submitBtn.html('<i class="bi bi-send"></i> Send');
             }
         });
     }
+    $("#chat-history").append(loadingIndicator);
+    $("#message").val("");  // Clear input
+    $("#message").focus();
+    const msg = $("#message").val().trim();
+    // Send message to server
+    $.ajax({
+        url: "/chat",
+        type: "POST",
+        data: JSON.stringify({ message: msg }),
+        contentType: "application/json",
+        timeout: 30000, // 30 second timeout
+        success: function(response) {
+            // Add assistant message
+            const assistantMessage = `
+                <div class="chat-message assistant">
+                    <div class="message-avatar">A</div>
+                    <div class="message-content">
+                        <div class="message-bubble">${response.message}</div>
+                        <div class="message-meta">
+                            <span class="message-time">${new Date().toLocaleTimeString()}</span>
+                            <div class="message-actions">
+                                <button data-action="copy"><i class="bi bi-clipboard"></i></button>
+                                <button data-action="pin"><i class="bi bi-pin"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            $("#chat-history").append(assistantMessage);
 
-    function typeText(text, targetElement) {
-        const typingSpeed = 10; // milliseconds per character
-        let container = $('<div class="d-flex justify-content-start"><div class="chat-bubble assistant"></div></div>');
-        targetElement.append(container);
-        let bubble = container.find(".assistant");
-        
-        // Handle code blocks in the text
-        const codeBlockRegex = /```(\w*)\n([\s\S]*?)\n```/g;
-        let match;
-        let lastIndex = 0;
-        let result = [];
-        
-        // Process the text to find code blocks
-        while ((match = codeBlockRegex.exec(text)) !== null) {
-            // Add text before code block
-            if (match.index > lastIndex) {
-                const textBefore = text.substring(lastIndex, match.index);
-                result.push({ type: 'text', content: textBefore });
+            // Add code block if present
+            if (response.bot_reply) {
+                const codeContainer = `
+                    <div class="d-flex justify-content-start">
+                        <div class="chat-bubble assistant">
+                            <div class="code-container">
+                                <div class="code-header">
+                                    <span class="code-language">${response.language || 'text'}</span>
+                                    <div class="code-actions">
+                                        <button class="code-action copy-code" title="Copy code">
+                                            <i class="bi bi-clipboard"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="monaco-editor" data-code="${response.bot_reply.replace(/"/g, '&quot;')}" data-language="${response.language || 'text'}"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                $("#chat-history").append(codeContainer);
+                initializeMonacoEditors();
             }
-            
-            // Add code block
-            const language = match[1];
-            const code = match[2];
-            result.push({ type: 'code', language, code });
-            
-            lastIndex = codeBlockRegex.lastIndex;
-        }
-        
-        // Add remaining text after last code block
-        if (lastIndex < text.length) {
-            const remainingText = text.substring(lastIndex);
-            result.push({ type: 'text', content: remainingText });
-        }
-        
-        // Type out the text and code blocks
-        let currentChar = 0;
-        
-        function typeNext() {
-            if (currentChar < text.length) {
-                bubble.append(text[currentChar]);
-                currentChar++;
-                setTimeout(typeNext, typingSpeed);
+
+            $("#chat-history").scrollTop($("#chat-history")[0].scrollHeight);
+
+            // Provide download link if file is generated
+            if (response.download_url) {
+                showDownloadLink(response.download_url);
             }
+
+            // If an image is uploaded, display it
+            if (response.image_url) {
+                $("#chat-history").append(`
+                    <div class="d-flex justify-content-start">
+                        <div class="chat-bubble assistant">
+                            <img src="${response.image_url}" class="img-fluid" alt="Uploaded Image">
+                        </div>
+                    </div>
+                `);
+            }
+
+            // Re-enable submit button
+            const submitBtn = $("#sendBtn");
+            submitBtn.prop('disabled', false);
+            submitBtn.html('Send');
+        },
+        error: function(xhr, status, error) {
+            console.error("Error sending message:", error, xhr.responseText);
+            const errorMessage = xhr.responseText || error;
+            const errorBubble = `
+                <div class="chat-message assistant">
+                    <div class="message-avatar">A</div>
+                    <div class="message-content">
+                        <div class="message-bubble error-message">Error: ${errorMessage}</div>
+                        <div class="message-meta">
+                            <span class="message-time">${new Date().toLocaleTimeString()}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            $("#chat-history").append(errorBubble);
+            $("#chat-history").scrollTop($("#chat-history")[0].scrollHeight);
+            
+            // Re-enable submit button
+            const submitBtn = $("#sendBtn");
+            submitBtn.prop('disabled', false);
+            submitBtn.html('Send');
         }
-        
-        function processNextPart() {
-            if (result.length > 0) {
-                const part = result.shift();
+    });    const part = result.shift();
                 
                 if (part.type === 'text') {
                     // Type out text
                     currentChar = 0;
                     typeNext();
+{{ ... }}
                 } else if (part.type === 'code') {
                     // Add code block
                     const codeContainer = `
@@ -1412,124 +1392,32 @@
         processNextPart();
     }
 
-    // Initialize Monaco Editor
+    // Initialize Monaco Editor and set up form submission
     require(['vs/editor/editor.main'], function() {
         initializeMonacoEditors();
         loadChatHistory();
         setupEventHandlers();
         scrollToBottom();
         setupCodeCopyButtons();
+
+        // Set up form submission
+        $('#chat-form').on('submit', function(e) {
+            e.preventDefault();
+            sendMessage();
+        });
+
+        // Initialize settings
+        loadSettings();
     });
 
-    // Initialize settings
-    loadSettings();
-
-    // Initialize chat history
-    loadChatHistory();
-
-    // Set up event handlers
-    setupEventHandlers();
-
-    // Scroll to bottom of chat
-    scrollToBottom();
-
-    // Initialize code copy functionality
-    setupCodeCopyButtons();
-
-// Initialize settings
-loadSettings();
-
-// Initialize chat history
-loadChatHistory();
-
-// Set up event handlers
-setupEventHandlers();
-
-// Scroll to bottom of chat
-scrollToBottom();
-
-// Initialize code copy functionality
-setupCodeCopyButtons();
-
-// Initialize settings
-loadSettings();
-
-// Initialize chat history
-loadChatHistory();
-
-// Set up event handlers
-setupEventHandlers();
-
-// Scroll to bottom of chat
-scrollToBottom();
-
-// Initialize code copy functionality
-setupCodeCopyButtons();
-
-// Initialize settings
-loadSettings();
-
-// Initialize chat history
-loadChatHistory();
-
-// Set up event handlers
-setupEventHandlers();
-
-// Scroll to bottom of chat
-scrollToBottom();
-
-// Initialize code copy functionality
-setupCodeCopyButtons();
-
-// Initialize settings
-loadSettings();
-
-// Initialize chat history
-loadChatHistory();
-
-// Set up event handlers
-setupEventHandlers();
-
-// Scroll to bottom of chat
-scrollToBottom();
-
-// Initialize code copy functionality
-setupCodeCopyButtons();
-
-// Initialize settings
-loadSettings();
-
-// Initialize chat history
-loadChatHistory();
-
-// Set up event handlers
-setupEventHandlers();
-
-// Scroll to bottom of chat
-scrollToBottom();
-
-// Initialize code copy functionality
-setupCodeCopyButtons();
-
-// Initialize settings
-loadSettings();
-
-// Initialize chat history
-loadChatHistory();
-
-// Set up event handlers
-setupEventHandlers();
-
-// Scroll to bottom of chat
-scrollToBottom();
-
-// Initialize code copy functionality
-setupCodeCopyButtons();
-            if (match.index > lastIndex) {
-                result.push({
-                    type: 'text',
-                    content: text.substring(lastIndex, match.index)
-                });
+    // Load settings from localStorage
+    function loadSettings() {
+        try {
+            const savedSettings = localStorage.getItem('chatSettings');
+            if (savedSettings) {
+                Object.assign(settings, JSON.parse(savedSettings));
+                updateSettingsUI();
+                applySettings();
             }
             
             // Add code block
@@ -1587,21 +1475,71 @@ setupCodeCopyButtons();
                                     <i class="far fa-copy"></i>
                                 </button>
                             </div>
-                        </div>
-                        <div class="monaco-editor" data-code="${fragment.content.replace(/"/g, '&quot;')}" data-language="${fragment.language}"></div>
-                    </div>`);
-                
-                bubble.append(codeContainer);
-                initializeMonacoEditors();
-                currentIndex++;
-                processFragment();
-            }
-        };
-        
-        // Start processing fragments
-        processFragment();
-    }
 
+        // Save settings to localStorage
+        function saveSettings() {
+            try {
+                localStorage.setItem('chatSettings', JSON.stringify(settings));
+                applySettings();
+            } catch (e) {
+                console.error('Error saving settings:', e);
+            }
+        }
+
+        // Update UI based on settings
+        function updateSettingsUI() {
+            document.getElementById('darkModeSwitch').checked = settings.darkMode;
+            document.getElementById('codeHighlightingSwitch').checked = settings.codeHighlighting;
+            document.getElementById('messageTimestampsSwitch').checked = settings.messageTimestamps;
+            document.getElementById('avatarDisplaySwitch').checked = settings.avatarDisplay;
+            document.getElementById('messageReactionsSwitch').checked = settings.messageReactions;
+            document.getElementById('messagePinningSwitch').checked = settings.messagePinning;
+        }
+
+        // Apply settings to the chat interface
+        function applySettings() {
+            // Dark mode
+            if (settings.darkMode) {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+
+            // Update message display
+            const messages = document.querySelectorAll('.chat-message');
+            messages.forEach(message => {
+                const avatar = message.querySelector('.message-avatar');
+                if (avatar) {
+                    avatar.style.display = settings.avatarDisplay ? 'flex' : 'none';
+                }
+
+                const timestamp = message.querySelector('.message-time');
+                if (timestamp) {
+                    timestamp.style.display = settings.messageTimestamps ? 'block' : 'none';
+                }
+                const sidebarCollapseToggle = document.getElementById('sidebarCollapseToggle');
+                const sidebarToggle = document.getElementById('sidebarToggle');
+            });
+        }
+
+        // Event listeners for settings
+        document.getElementById('saveSettings').addEventListener('click', () => {
+            settings.darkMode = document.getElementById('darkModeSwitch').checked;
+            settings.codeHighlighting = document.getElementById('codeHighlightingSwitch').checked;
+            settings.messageTimestamps = document.getElementById('messageTimestampsSwitch').checked;
+            settings.avatarDisplay = document.getElementById('avatarDisplaySwitch').checked;
+            settings.messageReactions = document.getElementById('messageReactionsSwitch').checked;
+            settings.messagePinning = document.getElementById('messagePinningSwitch').checked;
+            saveSettings();
+            bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
+        });
+    });
+});
+</script>
+</body>
+</html>
+
+<script>
     function showDownloadLink(url) {
         let downloadLink = `
             <div class="d-flex justify-content-start">
@@ -1653,7 +1591,7 @@ setupCodeCopyButtons();
         } else {
             document.body.classList.remove('dark-mode');
         }
-    }
+
         // Update message display
         const messages = document.querySelectorAll('.chat-message');
         messages.forEach(message => {
@@ -1666,77 +1604,6 @@ setupCodeCopyButtons();
             if (timestamp) {
                 timestamp.style.display = settings.messageTimestamps ? 'block' : 'none';
             }
-            const sidebarCollapseToggle = document.getElementById('sidebarCollapseToggle');
-            const sidebarToggle = document.getElementById('sidebarToggle');
-        });
-    // Load settings from localStorage
-    function loadSettings() {
-            try {
-                const savedSettings = localStorage.getItem('chatSettings');
-                if (savedSettings) {
-                    Object.assign(settings, JSON.parse(savedSettings));
-                    updateSettingsUI();
-                    applySettings();
-                }
-            } catch (e) {
-                console.error('Error loading settings:', e);
-            }
-        }
-
-        // Save settings to localStorage
-        function saveSettings() {
-            try {
-                localStorage.setItem('chatSettings', JSON.stringify(settings));
-                applySettings();
-            } catch (e) {
-                console.error('Error saving settings:', e);
-            }
-        }
-
-        // Update UI based on settings
-        function updateSettingsUI() {
-            document.getElementById('darkModeSwitch').checked = settings.darkMode;
-            document.getElementById('codeHighlightingSwitch').checked = settings.codeHighlighting;
-            document.getElementById('messageTimestampsSwitch').checked = settings.messageTimestamps;
-            document.getElementById('avatarDisplaySwitch').checked = settings.avatarDisplay;
-            document.getElementById('messageReactionsSwitch').checked = settings.messageReactions;
-            document.getElementById('messagePinningSwitch').checked = settings.messagePinning;
-        }
-
-        // Apply settings to the chat interface
-        function applySettings() {
-            // Dark mode
-            if (settings.darkMode) {
-                document.body.classList.add('dark-mode');
-            } else {
-                document.body.classList.remove('dark-mode');
-            }
-
-            // Update message display
-            const messages = document.querySelectorAll('.chat-message');
-            messages.forEach(message => {
-                const avatar = message.querySelector('.message-avatar');
-                if (avatar) {
-                    avatar.style.display = settings.avatarDisplay ? 'flex' : 'none';
-                }
-
-                const timestamp = message.querySelector('.message-time');
-                if (timestamp) {
-                    timestamp.style.display = settings.messageTimestamps ? 'block' : 'none';
-                }
-            });
-        }
-
-        // Event listeners for settings
-        document.getElementById('saveSettings').addEventListener('click', () => {
-            settings.darkMode = document.getElementById('darkModeSwitch').checked;
-            settings.codeHighlighting = document.getElementById('codeHighlightingSwitch').checked;
-            settings.messageTimestamps = document.getElementById('messageTimestampsSwitch').checked;
-            settings.avatarDisplay = document.getElementById('avatarDisplaySwitch').checked;
-            settings.messageReactions = document.getElementById('messageReactionsSwitch').checked;
-            settings.messagePinning = document.getElementById('messagePinningSwitch').checked;
-            saveSettings();
-            bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
         });
     }
 
@@ -1754,12 +1621,6 @@ setupCodeCopyButtons();
 
     // Initialize settings
     loadSettings();
-
-    // Sidebar Toggle
-    const sidebar = document.getElementById('sidebar');
-    const sidebarCollapseToggle = document.getElementById('sidebarCollapseToggle');
-    const sidebarToggle = document.getElementById('sidebarToggle');
-
     sidebarCollapseToggle.addEventListener('click', toggleSidebar);
     sidebarToggle.addEventListener('click', toggleSidebar);
 
